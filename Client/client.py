@@ -1,57 +1,43 @@
 import socket
 import re
 from logger import logger
+import argparse
 from config import FORMAT, HEADER_LENGHT
+import sys
 
 IP = socket.gethostbyname(socket.gethostname())
 PORT = 6060
 SERVER_ADDR = ()
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(SERVER_ADDR)
+class Client:
+    def __init__(self, client_port):
+        self.port = client_port
 
-def send(msg):
-    message = msg.encode(FORMAT)
-    msg_length = len(message)
-    send_lenght = str(msg_length).encode(FORMAT)
-    send_lenght = b' ' * (HEADER_LENGHT - len(send_lenght))
-    client.send(send_lenght)
-    client.send(message)
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    def connect(self, host, port):
+        self.client_socket.connect((host, port))
+    
+    def send(self, msg: str):
+        message = msg.encode(FORMAT)
+        msg_length = len(message)
+        send_lenght = str(msg_length).encode(FORMAT)
+        send_lenght += b' ' * (HEADER_LENGHT - len(send_lenght))
+        self.client_socket.send(send_lenght)
+        self.client_socket.send(message)
+        
 
 
 if __name__ == "__main__":
-    arg_help = "{0} -p <port:default_value=5050> -s <server_ip:server_port>".format(sys.argv[0])
 
-    try:
-        opts, args = getopt.getopt(argv[1:], "p:h:s", ["port=", "help", "server="])
-    except:
-        logger.critical(arg_help)
-        sys.exit(2)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', type=int, metavar='', help='<port:default_value=5054>')
+    parser.add_argument('-s', type=str, metavar='', help='<server_ip:server_port>')
+    args = parser.parse_args()
 
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            logger.info(arg_help)  # print the help message
-            sys.exit(2)
+    server_ip, server_port = args.s.split(':')
+    server_port = int(server_port)
 
-        if opt in ("-p", "--port"):
-            try:
-                PORT = int(arg)
-            except ValueError:
-                logger.critical("Invalid port value")
-
-        if opt in ("-s", "--server"):
-            # Regular expression for match IP:Port address
-            address_re = re.compile("[0-9]{3}.[0-9]{3}.[0-9]{3}.[0-9]{3}:[0-9]{5}")
-
-            if not address_re.match(arg):
-                logger.critical("Value of server argument dont match with an IP:Port address")
-                logger.info(arg_help)
-                sys.exit(2)
-
-            server_ip, server_port = str(arg).split(':')
-            server_port = int(server_port)
-            SERVER_ADDR = (server_ip, server_port)
-
-    if not SERVER_ADDR:
-        logger.critical("You need to enter a server address")
-        sys.exit(2)
+    client = Client(args.p)
+    client.connect(server_ip, server_port)
+    client.send("hellow server mdf de nuevo")

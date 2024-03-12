@@ -1,66 +1,64 @@
 import socket
 import threading
 import sys
-import getopt
+import argparse
 from logger import logger
-from config import HEADER_LENGHT, DECODE_FORMAT
-
-IP = socket.gethostbyname(socket.gethostname())
-PORT = 5050
-
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.bind((IP, PORT))
-
-def handle_client(conn: socket.socket, addr):
-    logger.info(f"Connection accepted from {addr[0]}:{addr[1]}")
-
-    connected = True
-    while connected:
-        msg_length = conn.recv(HEADER_LENGHT)
-        msg_length = int(msg_length)
-
-        if msg_length == 0: 
-            connected = False
-        else:
-            msg = conn.recv(msg_length).decode(DECODE_FORMAT)
-            if len(msg) < msg_length:
-                logger.error(f"An error occurred while receiving the text string. Expected string lenght: {msg_length}, received string lenght: {len(msg)}")
-
-            logger.info(msg)
-
-    conn.close()
-    logger.info(f"Connection with {addr[0]}:{addr[1]} closed")
+from config import HEADER_LENGHT, FORMAT
 
 
-def start():
-    server.listen()
-    logger.info(f"Server is listening on {IP}:{PORT}")
-    while True:
-        conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
-        logger.info(f"Active connections ")
+class Server:
+    def __init__(self, port):
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._ip = socket.gethostbyname(socket.gethostname())
+        self._port = port
+        self.server_socket.bind((self._ip, self._port))
+
+
+    def _handle_client(self, conn: socket.socket, addr):
+        logger.info(f"Connection accepted from {addr[0]}:{addr[1]}")
+
+        connected = True
+        while connected:
+            msg_length = conn.recv(HEADER_LENGHT)
+            if not msg_length:
+                connected = False
+            else:
+                msg_length = int(msg_length)
+                msg = conn.recv(msg_length).decode(FORMAT)
+                if len(msg) < msg_length:
+                    logger.error(f"An error occurred while receiving the text string. Expected string lenght: {msg_length}, received string lenght: {len(msg)}")
+
+                logger.info(msg)
+
+        conn.close()
+        logger.info(f"Connection with {addr[0]}:{addr[1]} closed")
+
+
+    def start(self):
+        self.server_socket.listen()
+        logger.info(f"Server is listening on {self._ip}:{self._port}")
+        while True:
+            conn, addr = self.server_socket.accept()
+            thread = threading.Thread(target=self._handle_client, args=(conn, addr))
+            thread.start()
+            logger.info(f"Active Connections: {threading.active_count() - 1}")
+
+    
+    def send(msg):
+        pass
     
 
-logger.info("Server is starting...")
-start()
-
 if __name__ == "__main__":
-    arg_help = "{0} -p <port:default_value=5050>".format(sys.argv[0])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', type=int, metavar='', help='<port:default_value=5050>')
+    args = parser.parse_args()
 
-    try:
-        opts, args = getopt.getopt(argv[1:], "p:h", ["port=", "help"])
-    except:
-        logger.critical(arg_help)
-        sys.exit(2)
+    port = 5050
 
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print(arg_help)  # print the help message
-            sys.exit(2)
+    if args.p:
+        port = args.p
 
-        if opt in ("-p", "--port"):
-            try:
-                PORT = int(arg)
-            except ValueError:
-                logger.critical("Invalid port value")
+    server = Server(port)
+
+    logger.info("Server is starting...")
+    server.start()
