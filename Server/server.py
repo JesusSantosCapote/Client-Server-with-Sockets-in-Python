@@ -25,7 +25,7 @@ def handle_client(conn: socket.socket, addr):
             msg = conn.recv(msg_length).decode(DECODE_FORMAT)
             if len(msg) < msg_length:
                 logger.error(f"An error occurred while receiving the text string. Expected string lenght: {msg_length}, received string lenght: {len(msg)}")
-                
+
             logger.info(msg)
 
     conn.close()
