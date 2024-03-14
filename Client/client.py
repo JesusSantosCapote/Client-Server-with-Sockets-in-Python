@@ -4,6 +4,7 @@ from logger import logger
 import argparse
 from config import FORMAT, HEADER_LENGHT
 import sys
+from chains_generator import RandomChainsGenerator
 
 IP = socket.gethostbyname(socket.gethostname())
 PORT = 6060
@@ -40,4 +41,8 @@ if __name__ == "__main__":
 
     client = Client(args.p)
     client.connect(server_ip, server_port)
-    client.send("hellow server mdf de nuevo")
+
+    gen = RandomChainsGenerator(10)
+    gen.generate_chains()
+    for chain in gen.generated_chains:
+        client.send(chain)
