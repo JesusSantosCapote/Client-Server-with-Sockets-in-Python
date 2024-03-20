@@ -4,7 +4,7 @@ import sys
 import argparse
 from logger import logger
 from config import HEADER_LENGHT, FORMAT
-
+from chain_measure import calculate_weighing_measure
 
 class Server:
     def __init__(self, port):
@@ -29,6 +29,9 @@ class Server:
                     logger.error(f"An error occurred while receiving the text string. Expected string lenght: {msg_length}, received string lenght: {len(msg)}")
 
                 logger.info(msg)
+                measure = calculate_weighing_measure(msg)
+                logger.info(f"Calculated measure: {measure}")
+                self.send(str(measure), conn)
 
         conn.close()
         logger.info(f"Connection with {addr[0]}:{addr[1]} closed")
@@ -44,8 +47,13 @@ class Server:
             logger.info(f"Active Connections: {threading.active_count() - 1}")
 
     
-    def send(msg):
-        pass
+    def send(self, msg: str, client_socket: socket.socket):
+        message = msg.encode(FORMAT)
+        msg_length = len(message)
+        send_lenght = str(msg_length).encode(FORMAT)
+        send_lenght += b' ' * (HEADER_LENGHT - len(send_lenght))
+        client_socket.send(send_lenght)
+        client_socket.send(message)
     
 
 if __name__ == "__main__":
