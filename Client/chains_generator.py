@@ -6,8 +6,7 @@ import string
 
 
 class ChainGenerator(metaclass = abc.ABCMeta):
-    def __init__(self, chains_qty = 1000000):
-        self.chains_qty = chains_qty
+    def __init__(self):
         self.generated_chains = []
 
     @abstractmethod
@@ -16,14 +15,11 @@ class ChainGenerator(metaclass = abc.ABCMeta):
 
 
 class RandomChainsGenerator(ChainGenerator):
-    def __init__(self, chains_qty = 1000000):
-        ChainGenerator.__init__(self, chains_qty)
-
     def _getRandomChar(self):
         return random.choice(string.ascii_letters + string.digits)
 
-    def generate_chains(self):
-        for i in range(self.chains_qty):
+    def generate_chains(self, chains_qty):
+        for i in range(chains_qty):
             chain = []
             white_spaces = random.randint(3, 5)
             chain_lenght = random.randint(50, 100)
